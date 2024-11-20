@@ -10,7 +10,7 @@ const CardEditForm = ({ cardId, onUpdate }) => {
     // Fetch existing card data to edit
     useEffect(() => {
         if (cardId) {
-            axios.get(`http://localhost:5000/cards/${cardId}`)
+            axios.get(`https://react-with-backend-silk.vercel.app/cards/${cardId}`)
                 .then((response) => {
                     const card = response.data;
                     setTitle(card.title);
@@ -32,7 +32,7 @@ const CardEditForm = ({ cardId, onUpdate }) => {
         };
 
         // Send PUT request to backend
-        axios.put(`http://localhost:5000/cards/${cardId}`, updatedCard)
+        axios.put(`https://react-with-backend-silk.vercel.app/cards/${cardId}`, updatedCard)
             .then((response) => {
                 alert('Card updated successfully!');
                 onUpdate();  // Notify parent to update the list
