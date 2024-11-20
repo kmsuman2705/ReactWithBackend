@@ -19,7 +19,7 @@ function CardList() {
 
     const fetchCards = async () => {
         try {
-            const response = await axios.get("http://localhost:5000/cards");
+            const response = await axios.get("https://react-with-backend-silk.vercel.app/cards");
             setCards(response.data);
         } catch (error) {
             console.error("Error fetching cards:", error);
@@ -39,7 +39,7 @@ function CardList() {
     const handleCreateCard = async (e) => {
         e.preventDefault();
         try {
-            const response = await axios.post("http://localhost:5000/cards", formData);
+            const response = await axios.post("https://react-with-backend-silk.vercel.app/cards", formData);
             setCards([...cards, response.data]);
             setFormData({ title: "", description: "", image: "", cardId: "" });
             setShowForm(false);
@@ -65,7 +65,7 @@ function CardList() {
         e.preventDefault();
         try {
             const response = await axios.put(
-                `http://localhost:5000/cards/${editCard._id}`,
+                `https://react-with-backend-silk.vercel.app/cards/${editCard._id}`,
                 formData
             );
             const updatedCards = cards.map((card) =>
@@ -83,7 +83,7 @@ function CardList() {
     // Handle delete card
     const handleDeleteCard = async (cardId) => {
         try {
-            await axios.delete(`http://localhost:5000/cards/${cardId}`);
+            await axios.delete(`https://react-with-backend-silk.vercel.app/cards/${cardId}`);
             const updatedCards = cards.filter((card) => card._id !== cardId);
             setCards(updatedCards);
         } catch (error) {
