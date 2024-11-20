@@ -1,164 +1,191 @@
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import React, { useState, useEffect } from "react";
+import axios from "axios";
 
-const CardList = () => {
+function CardList() {
     const [cards, setCards] = useState([]);
-    const [editingCard, setEditingCard] = useState(null);  // Track the card being edited
-    const [newCard, setNewCard] = useState({ title: '', description: '', cardId: '', image: '' });
+    const [showForm, setShowForm] = useState(false);
+    const [editCard, setEditCard] = useState(null);
+    const [formData, setFormData] = useState({
+        title: "",
+        description: "",
+        image: "",
+        cardId: "",
+    });
 
-    // Fetch cards from backend
+    // Fetch the cards from the backend API
     useEffect(() => {
-        axios.get('http://localhost:5000/cards')
-            .then((response) => setCards(response.data))
-            .catch((error) => console.error('Error fetching cards:', error));
+        fetchCards();
     }, []);
 
-    // Handle delete
-    const handleDelete = (id) => {
-        axios.delete(`http://localhost:5000/cards/${id}`)
-            .then(() => {
-                alert('Card deleted successfully!');
-                setCards((prevCards) => prevCards.filter((card) => card._id !== id));  // Update state
-            })
-            .catch((error) => console.error('Error deleting card:', error));
+    const fetchCards = async () => {
+        try {
+            const response = await axios.get("http://localhost:5000/cards");
+            setCards(response.data);
+        } catch (error) {
+            console.error("Error fetching cards:", error);
+        }
     };
 
-    // Handle create (form submission)
-    const handleCreate = (e) => {
-        e.preventDefault();
-        axios.post('http://localhost:5000/cards', newCard)
-            .then((response) => {
-                alert('Card created successfully!');
-                setCards([...cards, response.data]);  // Add the new card to the list
-                setNewCard({ title: '', description: '', cardId: '', image: '' });  // Reset form
-            })
-            .catch((error) => console.error('Error creating card:', error));
-    };
-
-    // Handle update
-    const handleUpdate = (e) => {
-        e.preventDefault();
-        axios.put(`http://localhost:5000/cards/${editingCard._id}`, editingCard)
-            .then((response) => {
-                alert('Card updated successfully!');
-                setCards(cards.map(card => card._id === editingCard._id ? editingCard : card));  // Update card in list
-                setEditingCard(null);  // Clear editing state
-            })
-            .catch((error) => console.error('Error updating card:', error));
-    };
-
-    // Set the card for editing
-    const handleEdit = (card) => {
-        setEditingCard(card);  // Set selected card for editing
-    };
-
-    // Handle input change for edit form
-    const handleChange = (e) => {
+    // Handle form input changes
+    const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setEditingCard((prev) => ({
-            ...prev,
-            [name]: value
-        }));
+        setFormData({
+            ...formData,
+            [name]: value,
+        });
+    };
+
+    // Handle create card
+    const handleCreateCard = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.post("http://localhost:5000/cards", formData);
+            setCards([...cards, response.data]);
+            setFormData({ title: "", description: "", image: "", cardId: "" });
+            setShowForm(false);
+        } catch (error) {
+            console.error("Error creating card:", error);
+        }
+    };
+
+    // Handle edit card
+    const handleEditCard = (card) => {
+        setEditCard(card);
+        setFormData({
+            title: card.title,
+            description: card.description,
+            image: card.image,
+            cardId: card.cardId,
+        });
+        setShowForm(true);
+    };
+
+    // Handle update card
+    const handleUpdateCard = async (e) => {
+        e.preventDefault();
+        try {
+            const response = await axios.put(
+                `http://localhost:5000/cards/${editCard._id}`,
+                formData
+            );
+            const updatedCards = cards.map((card) =>
+                card._id === response.data._id ? response.data : card
+            );
+            setCards(updatedCards);
+            setFormData({ title: "", description: "", image: "", cardId: "" });
+            setEditCard(null);
+            setShowForm(false);
+        } catch (error) {
+            console.error("Error updating card:", error);
+        }
+    };
+
+    // Handle delete card
+    const handleDeleteCard = async (cardId) => {
+        try {
+            await axios.delete(`http://localhost:5000/cards/${cardId}`);
+            const updatedCards = cards.filter((card) => card._id !== cardId);
+            setCards(updatedCards);
+        } catch (error) {
+            console.error("Error deleting card:", error);
+        }
     };
 
     return (
         <div className="container">
             <h2>Card List</h2>
 
-            {/* Button to open Create Form */}
-            <button className="btn-create" onClick={() => setEditingCard({ title: '', description: '', cardId: '', image: '' })}>
-                Create New Card
+            {/* Button to show create form */}
+            <button className="btn-create" onClick={() => setShowForm(true)}>
+                Create Card
             </button>
 
-            {/* Cards */}
-            <div className="card-container">
-                {cards.map((card) => (
-                    <div key={card._id} className="card">
-                        <img src={card.image} alt={card.title} />
-                        <h3>{card.title}</h3>
-                        <p>{card.description}</p>
-                        <p><strong>Card ID:</strong> {card.cardId}</p> {/* Display the cardId here */}
-
-                        {/* Show Edit Form for the specific card when "Edit" is clicked */}
-                        {editingCard && editingCard._id === card._id ? (
-                            <form onSubmit={handleUpdate}>
-                                <input
-                                    type="text"
-                                    name="title"
-                                    placeholder="Title"
-                                    value={editingCard.title}
-                                    onChange={handleChange}
-                                />
-                                <textarea
-                                    name="description"
-                                    placeholder="Description"
-                                    value={editingCard.description}
-                                    onChange={handleChange}
-                                />
-                                <input
-                                    type="text"
-                                    name="cardId"
-                                    placeholder="Card ID"
-                                    value={editingCard.cardId}
-                                    onChange={handleChange}
-                                />
-                                <input
-                                    type="text"
-                                    name="image"
-                                    placeholder="Image URL"
-                                    value={editingCard.image}
-                                    onChange={handleChange}
-                                />
-                                <div className="modal-actions">
-                                    <button type="submit">Update Card</button>
-                                    <button type="button" className="btn-cancel" onClick={() => setEditingCard(null)}>Cancel</button>
-                                </div>
-                            </form>
-                        ) : (
-                            <div className="card-actions">
-                                <button className="btn-edit" onClick={() => handleEdit(card)}>Edit</button>
-                                <button className="btn-delete" onClick={() => handleDelete(card._id)}>Delete</button>
-                            </div>
-                        )}
-                    </div>
-                ))}
-            </div>
-
-            {/* Create Form */}
-            {editingCard && !editingCard._id && (
-                <form onSubmit={handleCreate}>
+            {/* Form to create or edit a card */}
+            {showForm && (
+                <form onSubmit={editCard ? handleUpdateCard : handleCreateCard}>
                     <input
                         type="text"
                         name="title"
-                        placeholder="Title"
-                        value={newCard.title}
-                        onChange={(e) => setNewCard({ ...newCard, title: e.target.value })}
+                        placeholder="Card Title"
+                        value={formData.title}
+                        onChange={handleInputChange}
+                        required
                     />
                     <textarea
                         name="description"
-                        placeholder="Description"
-                        value={newCard.description}
-                        onChange={(e) => setNewCard({ ...newCard, description: e.target.value })}
-                    />
-                    <input
-                        type="text"
-                        name="cardId"
-                        placeholder="Card ID"
-                        value={newCard.cardId}
-                        onChange={(e) => setNewCard({ ...newCard, cardId: e.target.value })}
+                        placeholder="Card Description"
+                        value={formData.description}
+                        onChange={handleInputChange}
+                        required
                     />
                     <input
                         type="text"
                         name="image"
                         placeholder="Image URL"
-                        value={newCard.image}
-                        onChange={(e) => setNewCard({ ...newCard, image: e.target.value })}
+                        value={formData.image}
+                        onChange={handleInputChange}
+                        required
                     />
-                    <button type="submit">Create Card</button>
+                    <input
+                        type="text"
+                        name="cardId"
+                        placeholder="Card ID"
+                        value={formData.cardId}
+                        onChange={handleInputChange}
+                        required
+                    />
+
+                    <div className="modal-actions">
+                        <button type="submit">
+                            {editCard ? "Update Card" : "Create Card"}
+                        </button>
+                        <button
+                            type="button"
+                            className="btn-cancel"
+                            onClick={() => {
+                                setShowForm(false);
+                                setFormData({ title: "", description: "", image: "", cardId: "" });
+                                setEditCard(null);
+                            }}
+                        >
+                            Cancel
+                        </button>
+                    </div>
                 </form>
             )}
+
+            {/* Display the list of cards */}
+            <div className="card-container">
+                {cards.map((card) => (
+                    <div
+                        className="card"
+                        style={{ backgroundImage: `url(${card.image})` }}
+                        key={card._id}
+                    >
+                        <h3>{card.title}</h3>
+                        <p>{card.description}</p>
+                        <p className="card-id">ID: {card.cardId}</p>
+
+                        {/* Card action buttons */}
+                        <div className="card-actions">
+                            <button
+                                className="btn-edit"
+                                onClick={() => handleEditCard(card)}
+                            >
+                                Edit
+                            </button>
+                            <button
+                                className="btn-delete"
+                                onClick={() => handleDeleteCard(card._id)}
+                            >
+                                Delete
+                            </button>
+                        </div>
+                    </div>
+                ))}
+            </div>
         </div>
     );
-};
+}
 
 export default CardList;
